@@ -7,9 +7,9 @@ pipeline {
     }
 
     stages{
-        stage{'Git checkout'}{
+        stage('Git checkout'){
             steps{
-                git branch: 'main', url 'https://github.com/veerbasanna/test-1-Manoj.git'
+                git branch: 'main', url :'https://github.com/veerbasanna/test-1-Manoj.git'
             }
         }
 
@@ -20,13 +20,13 @@ pipeline {
         }
 
         stage('Build') {
-            steps {
+            steps{
                 sh 'mvn clean install'
             }
         }
 
         stage('Code Scan') {
-            steps {
+            steps{
                 withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
                     sh "mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}"
                 }
