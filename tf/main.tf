@@ -1,6 +1,6 @@
 provider "aws" {
     region = "us-east-1"              # add region
-    access_key = ""***                # add IAM console>users>security-credentials
+    access_key = "***"                # add IAM console>users>security-credentials
     secret_key = "***"                # add IAM console>users>security-credentials
 }
 
