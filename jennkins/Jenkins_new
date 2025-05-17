@@ -1,0 +1,74 @@
+pipeline {
+    agent any
+
+    tools {
+        jdk 'java-11'
+        maven 'maven'
+    }
+
+    stages{
+        stage('Git checkout'){
+            steps{
+                git branch: 'main', url :'https://github.com/veerbasanna/test-1-Manoj.git'
+            }
+        }
+
+        stage('Compile') {
+            steps {
+                sh 'mvn compile'
+            }
+        }
+
+        stage('Build') {
+            steps{
+                sh 'mvn clean install'
+            }
+        }
+
+        stage('Code Scan') {
+            steps{
+                withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+                    sh "mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=http://54.85.253.6:9000/"
+                }
+            }
+        }
+
+        stage('Build and Tag') {
+            steps {
+                sh 'docker build -t veereshbasanna/webapp:1 .'
+            }
+        }
+
+        stage('Docker Image Scan') {
+            steps {
+                sh 'trivy image --format table -o trivy-image-report.html veereshbasanna/webapp:1'
+            }
+        }
+
+        stage('Containerization') {
+            steps {
+                sh '''
+                    docker stop c1 || true
+                    docker rm c1 || true
+                    docker run -it -d --name c1 -p 9008:8080 veereshbasanna/webapp:1
+                '''
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"
+                    }
+                }
+            }
+        }
+
+        stage('Pushing Image to Repository') {
+            steps {
+                sh 'docker push veereshbasanna/webapp:1'
+            }
+        }
+    }
+}
